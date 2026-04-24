@@ -1,53 +1,259 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HND_2_Quiz App Home</title>
+    <title>HND 2 Quiz App</title>
 
     <style>
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(to right, purple, green);
             margin: 0;
-            padding: 0;
             text-align: center;
             color: white;
         }
 
         .container {
-            margin-top: 150px;
+            margin-top: 50px;
+            padding: 10px;
         }
 
         h1 {
-            font-size: 40px;
-        }
-
-        p {
-            font-size: 18px;
+            font-size: 36px;
         }
 
         .btn {
-            display: inline-block;
-            margin-top: 20px;
             padding: 12px 25px;
             background: white;
             color: purple;
-            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
             font-weight: bold;
-            border-radius: 5px;
+            margin: 10px;
         }
 
         .btn:hover {
             background: #ddd;
         }
+
+        .quiz-box {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .question {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .option {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 70%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .option:hover {
+            background: #eee;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .progress-bar {
+            width: 70%;
+            height: 10px;
+            background: #fff;
+            margin: 10px auto;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: lime;
+            transition: width 0.3s;
+        }
+
+        .result-box {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .score {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .best {
+            font-size: 18px;
+            margin-top: 10px;
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="container">
-        <h1>Welcome to HND_2_Quiz App</h1>
-        <p>Test your knowledge and see your score!</p>
+<div class="container">
 
-        <a href="login_select.php" class="btn">Continue</a>
+    <h1>HND 2 Quiz App</h1>
+    <p>Improve your knowledge step by step</p>
+
+    <button class="btn" onclick="startQuiz()">Start Quiz</button>
+
+    <div class="quiz-box" id="quizBox">
+
+        <div class="top-bar">
+            <div>Time: <span id="time">10</span>s</div>
+            <div>Question <span id="progress"></span></div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="question" id="question"></div>
+
+        <div id="options"></div>
+
+    </div>
+
+    <div class="result-box" id="resultBox">
+        <div class="score" id="scoreText"></div>
+        <div class="best" id="bestScore"></div>
+
+        <button class="btn" onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+
+</div>
+
+<script>
+const questions = [
+    {
+        question: "What does HTML stand for?",
+        options: ["Hyper Text Markup Language", "High Text Machine Language", "Home Tool Markup Language", "None"],
+        answer: 0
+    },
+    {
+        question: "Which language is used for styling?",
+        options: ["HTML", "CSS", "Python", "PHP"],
+        answer: 1
+    },
+    {
+        question: "Which is a JavaScript framework?",
+        options: ["Laravel", "React", "Django", "Flask"],
+        answer: 1
+    }
+];
+
+let current = 0;
+let score = 0;
+let time = 10;
+let timer;
+
+function startQuiz() {
+    document.getElementById("quizBox").style.display = "block";
+    document.getElementById("resultBox").style.display = "none";
+
+    current = 0;
+    score = 0;
+
+    loadQuestion();
+}
+
+function loadQuestion() {
+    clearInterval(timer);
+    time = 10;
+
+    document.getElementById("time").innerText = time;
+    document.getElementById("progress").innerText = (current + 1) + "/" + questions.length;
+
+    updateProgressBar();
+
+    timer = setInterval(countDown, 1000);
+
+    let q = questions[current];
+    document.getElementById("question").innerText = q.question;
+
+    let optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+
+    q.options.forEach((opt, index) => {
+        let btn = document.createElement("button");
+        btn.className = "option";
+        btn.innerText = opt;
+
+        btn.onclick = () => checkAnswer(index);
+
+        optionsDiv.appendChild(btn);
+    });
+}
+
+function countDown() {
+    time--;
+    document.getElementById("time").innerText = time;
+
+    if (time === 0) {
+        nextQuestion();
+    }
+}
+
+function checkAnswer(index) {
+    if (index === questions[current].answer) {
+        score++;
+    }
+    nextQuestion();
+}
+
+function nextQuestion() {
+    clearInterval(timer);
+    current++;
+
+    if (current < questions.length) {
+        loadQuestion();
+    } else {
+        showResult();
+    }
+}
+
+function updateProgressBar() {
+    let percent = (current / questions.length) * 100;
+    document.getElementById("progressFill").style.width = percent + "%";
+}
+
+function showResult() {
+    document.getElementById("quizBox").style.display = "none";
+    document.getElementById("resultBox").style.display = "block";
+
+    let percent = Math.round((score / questions.length) * 100);
+
+    document.getElementById("scoreText").innerHTML =
+        "Your Score: " + score + "/" + questions.length +
+        "<br>Percentage: " + percent + "%";
+
+    let best = localStorage.getItem("bestScore") || 0;
+
+    if (percent > best) {
+        localStorage.setItem("bestScore", percent);
+        best = percent;
+    }
+
+    document.getElementById("bestScore").innerText =
+        "Best Score: " + best + "%";
+}
+
+function restartQuiz() {
+    startQuiz();
+}
+</script>
 
 </body>
 </html>
